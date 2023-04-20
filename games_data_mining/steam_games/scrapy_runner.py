@@ -76,3 +76,11 @@ def indeed_dk(offset, keyword, location, full_name):
     subprocess.call(
         [f'scrapy crawl indeed_dk -a offset="{offset}" -a keyword="{keyword}" -a location="{location}" -o {full_name}'],
         shell=True, cwd=f'{path}')
+
+
+# # Norway Indeed Jobs API Scrapy Starter
+# def indeed_fi(offset, keyword, location, full_name):
+#     path = '/home/mukthy/Desktop/office/projects/upwork/steam/steamgames'
+#     subprocess.call(
+#         [f'scrapy crawl indeed_fi -a offset="{offset}" -a keyword="{keyword}" -a location="{location}" -o {full_name}'],
+#         shell=True, cwd=f'{path}')
