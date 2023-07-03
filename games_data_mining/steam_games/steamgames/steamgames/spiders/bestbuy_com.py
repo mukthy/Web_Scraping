@@ -20,20 +20,26 @@ class BestbuyComSpider(scrapy.Spider):
         self.page = page
         self.keyword = keyword
 
-    def start_requests(self):
+        def start_requests(self):
         # arg = 'iphone'
         # page = 1
         url = f'https://www.bestbuy.com/site/searchpage.jsp?cp={self.page}&st={self.keyword}&intl=nosplash'
         yield scrapy.Request(url, callback=self.parse)
 
     def parse(self, response):
-        # with open('bestbuy.html', 'w') as f:
-        #     f.write(response.text)
+        with open('bestbuy.html', 'w') as f:
+            f.write(response.text)
         products = response.xpath('//li[@class="sku-item"]')
         for product in products:
             title = product.xpath('.//h4/a/text()').get()
-            price = product.xpath('.//div[@class="priceView-hero-price priceView-customer-price"]/span/text()').get()
-            per_month = product.xpath(".//span[@class='priceView-subscription-units']/text()").get()
+            # price = product.xpath('.//div[@class="priceView-hero-price priceView-customer-price"]/span/text()').get()
+            # print(price)
+            # per_month = product.xpath(".//span[@class='priceView-subscription-units']/text()").get()
+            # print(per_month)
+            # if per_month is None:
+            #     per_month = ''
+            # else:
+            #     per_month = per_month
             # for_months = product.xpath(".//div[@class='priceView-price-disclaimer']").get()
             offer_percent = product.xpath(".//div[@class='pricing-price__savings']/text()").get()
             regular_price = product.xpath(".//div[@class='pricing-price__regular-price']/text()").get()
@@ -50,16 +56,16 @@ class BestbuyComSpider(scrapy.Spider):
             rating = product.xpath(".//p[@class='visually-hidden']/text()").get()
 
             # Cleaning the data
-            per_month = clean_permonth(per_month)
+            # per_month = clean_permonth(per_month)
             # for_months_r = clean_for_months(for_months)
             offer_percent = clean_offer_percent(offer_percent)
             regular_price = clean_regular_price(regular_price)
             color = clean_color(color)
-            full_price = price + per_month #+ for_months_r
+            # full_price = price + per_month  # + for_months_r
 
             item = BestbuyItem()
             item['title'] = title
-            item['price'] = full_price
+            # item['price'] = full_price
             item['offer_percent'] = offer_percent
             item['regular_price'] = regular_price
             item['color'] = color
@@ -69,4 +75,19 @@ class BestbuyComSpider(scrapy.Spider):
             item['product_url'] = url
             item['rating'] = rating
 
-            yield item
+            yield scrapy.Request(url, callback=self.parse_product, meta={'item': item})
+
+    def parse_product(self, response):
+        price = response.xpath('//div[@class="priceView-hero-price priceView-customer-price"]/span/text()').get()
+        per_month = response.xpath('//span[@class="priceView-subscription-units"]/text()').get()
+
+        if per_month is None:
+            per_month = ''
+        else:
+            per_month = per_month
+
+        full_price = price + per_month
+
+        item = response.meta['item']
+        item['price'] = full_price
+        yield item
