@@ -32,6 +32,43 @@ def create_item(file_name):
         return None
 
 
+def upload_files(file, item_id):
+    print('Uploading File')
+
+    # API URL
+    url = "https://api.monday.com/v2/file"
+
+    # item_id = '4242601503'
+    # sample_payload = '''mutation add_file($file: File!) {add_file_to_column (item_id: 4242601503, column_id:"files" file: $file) {id name}}', 'map': '{"image":"variables.file"}'''
+
+    # GraphQL Query
+
+    p1 = 'mutation add_file($file: File!) {add_file_to_column (item_id: '
+    p2 = f'{item_id}'
+    p3 = ', column_id:"files" file: $file) {id name}}'
+
+    # GraphQL Query Crafted
+    payload = {'query': p1 + p2 + p3 + ' ', 'map': '{"image":"variables.file"}'}
+
+    # print(payload)
+
+    files = [('image', (f'{file}', open(f'/home/mukthy/Desktop/office/projects/upwork/nimrodmo_monday/images/{file}', 'rb'), 'application/octet-stream'))]
+    headers = {
+        'Authorization': 'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjI0ODMyMTQ5MSwidWlkIjo0MTcwOTU3NywiaWFkIjoiMjAyMy0wMy0zMVQyMjoxNjo1MS4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6NzUyNTA0NywicmduIjoidXNlMSJ9.wMkIJSQ8f9yRAwfXTNEJQ6xxuvxdNRXOGGasM9Ke5TY',
+    }
+
+    response = requests.request("POST", url, headers=headers, data=payload, files=files)
+
+    # print(response.text)  # un-comment while debugging.
+
+    if response.status_code == 200:
+        print("File Uploaded Successfully")
+        os.remove(f'/home/mukthy/Desktop/office/projects/upwork/nimrodmo_monday/images/{file}')
+        return print(f'File {file} Uploaded and Removed Successfully.\n===========================================')
+    else:
+        return print(f'File {file} Upload Failed, but not removed.\n===========================================')
+
+
 def main():
     print('Starting Script')
     files = os.listdir('images')
@@ -40,6 +77,11 @@ def main():
     for index, file in enumerate(files):
         file_name = file.split('.')[0]
         item_id = create_item(file_name)
+        if item_id is None:
+            print("Item Creation Failed")
+        else:
+            print(f"Item Created with FileName '{file_name}' and ItemId is '{item_id}'.")
+            upload_files(file, item_id)
 
 
 if __name__ == '__main__':
