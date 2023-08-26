@@ -189,6 +189,21 @@ def post_slack(detail):
         slack_webhook_url = os.getenv("SLACK_WEBHOOK_URL_VOID")
         channel = "C05G35XM1B8"
 
+    if ("po-vs" in name) or ("po-vs-inward-history" in name):
+        print("Sending Slack Message to po-vs-inward-history")
+        slack_webhook_url = os.getenv("SLACK_WEBHOOK_URL_VOID")
+        channel = "C05NJCJ312L"
+
+    elif ("purchase-detail" in name) or ("purchase-detail-itemwise" in name):
+        print("Sending Slack Message to purchase-detail-itemwise")
+        slack_webhook_url = os.getenv("SLACK_WEBHOOK_URL_VOID")
+        channel = "C05MJJXGDUN"
+
+    elif "purchase-register" in name:
+        print("Sending Slack Message to purchase-register")
+        slack_webhook_url = os.getenv("SLACK_WEBHOOK_URL_VOID")
+        channel = "C05MNASU93P"
+
     try:
         subject = detail["Subject"].split(detail["Name"])[1]
         if len(subject) == 0:
