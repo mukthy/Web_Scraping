@@ -31,18 +31,31 @@ class BestbuyComSpider(scrapy.Spider):
             f.write(response.text)
         products = response.xpath('//li[@class="sku-item"]')
         for product in products:
+
+            data = product.xpath('.//div[@class="sku-list-item-price"]/div/div/script/text()').get()
+            data = json.loads(data)
+            price = data['app']['data']['customerPrice']
+            if 'showPerMonth' in data['app']['data'] and data['app']['data']['showPerMonth'] is True:
+                full_price = str(price) + '/Per Month'
+            else:
+                full_price = price
+
             title = product.xpath('.//h4/a/text()').get()
-            # price = product.xpath('.//div[@class="priceView-hero-price priceView-customer-price"]/span/text()').get()
+            # price = product.xpath('.//div[@class="priceView-hero-price priceView-customer-price"]/span[1]/text()').get()
             # print(price)
             # per_month = product.xpath(".//span[@class='priceView-subscription-units']/text()").get()
-            # print(per_month)
-            # if per_month is None:
-            #     per_month = ''
-            # else:
-            #     per_month = per_month
             # for_months = product.xpath(".//div[@class='priceView-price-disclaimer']").get()
-            offer_percent = product.xpath(".//div[@class='pricing-price__savings']/text()").get()
-            regular_price = product.xpath(".//div[@class='pricing-price__regular-price']/text()").get()
+
+            if 'regularPrice' not in data['app']['data']:
+                regular_price = 'Not Given'
+                offer_percent = 'Not Given'
+            else:
+                regular_price = data['app']['data']['regularPrice']
+                offer_percent = price / regular_price * 100
+                offer_percent = 100 - offer_percent
+                offer_percent = round(offer_percent, 2)
+                offer_percent = str(offer_percent) + '%'
+
             color = product.xpath(".//div[@class='product-variation-header']/div[2]/text()").get()
             model_number = product.xpath(".//div[@class='sku-model']/div/span[2]/text()").get()
             sku = product.xpath(".//div[@class='sku-model']/div[2]/span[2]/text()").get()
@@ -55,17 +68,22 @@ class BestbuyComSpider(scrapy.Spider):
             url = 'https://www.bestbuy.com' + product_url
             rating = product.xpath(".//p[@class='visually-hidden']/text()").get()
 
-            # Cleaning the data
-            # per_month = clean_permonth(per_month)
-            # for_months_r = clean_for_months(for_months)
-            offer_percent = clean_offer_percent(offer_percent)
-            regular_price = clean_regular_price(regular_price)
-            color = clean_color(color)
-            # full_price = price + per_month  # + for_months_r
+            # if per_month is None:
+            #
+            #     # Cleaning the data
+            #     per_month = clean_permonth(per_month)
+            #     # for_months_r = clean_for_months(for_months)
+            #     offer_percent = clean_offer_percent(offer_percent)
+            #     regular_price = clean_regular_price(regular_price)
+            #     color = clean_color(color)
+            #     full_price = str(price) + per_month #+ for_months_r
+            #
+            # else:
+            #     full_price = price
 
             item = BestbuyItem()
             item['title'] = title
-            # item['price'] = full_price
+            item['price'] = full_price
             item['offer_percent'] = offer_percent
             item['regular_price'] = regular_price
             item['color'] = color
@@ -75,19 +93,4 @@ class BestbuyComSpider(scrapy.Spider):
             item['product_url'] = url
             item['rating'] = rating
 
-            yield scrapy.Request(url, callback=self.parse_product, meta={'item': item})
-
-    def parse_product(self, response):
-        price = response.xpath('//div[@class="priceView-hero-price priceView-customer-price"]/span/text()').get()
-        per_month = response.xpath('//span[@class="priceView-subscription-units"]/text()').get()
-
-        if per_month is None:
-            per_month = ''
-        else:
-            per_month = per_month
-
-        full_price = price + per_month
-
-        item = response.meta['item']
-        item['price'] = full_price
-        yield item
+            yield item
